@@ -437,6 +437,10 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
   <div class="logo"><div class="logo-icon">🏊</div>DR Prime Piscinas</div>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="sync-badge sync-off" id="syncBadge">⏳ Sincronizando...</span>
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;">
+      <span style="font-size:1rem;">👤</span>
+      <span id="usuarioLogadoNome" style="font-size:0.82rem;font-weight:700;color:var(--text);font-family:var(--font);">—</span>
+    </div>
     <button class="btn btn-ghost btn-sm" onclick="abrirGerenciarUsuarios()" title="Gerenciar usuários" style="padding:6px 10px;">🔐</button>
     <button class="btn btn-ghost btn-sm" onclick="fazerLogout()" title="Sair" style="padding:6px 10px;">🚪 Sair</button>
     <div class="nav-tabs">
@@ -1875,6 +1879,14 @@ function verificarLogin() {
   const logado = sessionStorage.getItem('drprime_logado');
   if (logado === '1') {
     document.getElementById('loginOverlay').classList.add('hide');
+    // Restaurar nome do usuário no header
+    const usuario = sessionStorage.getItem('drprime_usuario');
+    if (usuario) {
+      const usuarios = getUsuarios();
+      const u = usuarios.find(x => x.usuario === usuario || (x.nome && x.nome.toLowerCase() === usuario.toLowerCase()));
+      const nomeExibir = u ? (u.nome || u.usuario) : usuario;
+      document.getElementById('usuarioLogadoNome').textContent = nomeExibir;
+    }
   }
 }
 
@@ -1888,7 +1900,10 @@ function fazerLogin() {
     sessionStorage.setItem('drprime_usuario', usuario);
     document.getElementById('loginOverlay').classList.add('hide');
     document.getElementById('loginErro').classList.remove('show');
-    showToast('✓ Bem-vindo, ' + usuario + '!', 'success');
+    // Mostrar nome completo no header
+    const nomeExibir = encontrado.nome || usuario;
+    document.getElementById('usuarioLogadoNome').textContent = nomeExibir;
+    showToast('✓ Bem-vindo, ' + nomeExibir + '!', 'success');
   } else {
     document.getElementById('loginErro').classList.add('show');
     document.getElementById('loginSenha').value = '';
