@@ -1978,7 +1978,10 @@ function removerUsuario(idx) {
   showToast('Usuário removido', 'info');
 }
 
-verificarLogin();
+// Aguardar DOM carregar completamente antes de verificar login
+document.addEventListener('DOMContentLoaded', function() {
+  verificarLogin();
+});
 
 renderDashboard();
 </script>
