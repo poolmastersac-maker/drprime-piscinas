@@ -857,19 +857,40 @@ let histClienteId = null;
 let histAno = new Date().getFullYear();
 let cobrancaAtual = null;
 
-function salvar() { localStorage.setItem('aquagest_clientes', JSON.stringify(clientes)); fbSync('clientes', clientes); }
+function salvar() {
+  localStorage.setItem('aquagest_clientes', JSON.stringify(clientes));
+  fbSync('clientes', clientes);
+}
 function salvarProdutos() { localStorage.setItem('aquagest_produtos', JSON.stringify(produtos)); fbSync('produtos', produtos); }
 function salvarHistorico() { localStorage.setItem('aquagest_historico', JSON.stringify(historico)); }
 
 // Firebase sync
 function fbSync(colecao, dados) {
-  if (!window._db) return;
+  if (!window._db || !window._fbModules) return;
   try {
-    const { collection, getDocs, setDoc, doc } = window._fbModules;
+    const { setDoc, doc } = window._fbModules;
     dados.forEach(item => {
-      setDoc(doc(window._db, colecao, String(item.id)), item).catch(e => console.warn('FB:', e));
+      setDoc(doc(window._db, colecao, String(item.id)), item)
+        .catch(e => console.warn('FB sync:', e));
     });
   } catch(e) { console.warn('FB sync error:', e); }
+}
+
+function fbDeletar(colecao, id) {
+  if (!window._db || !window._fbModules) return;
+  try {
+    const { deleteDoc, doc } = window._fbModules;
+    deleteDoc(doc(window._db, colecao, String(id))).catch(e => console.warn('FB delete:', e));
+  } catch(e) { console.warn('FB delete error:', e); }
+}
+
+function fbSalvarHistoricoItem(reg) {
+  if (!window._db || !window._fbModules) return;
+  try {
+    const { setDoc, doc } = window._fbModules;
+    const key = reg.clienteId + '_' + reg.ano + '_' + reg.mes;
+    setDoc(doc(window._db, 'historico', key), reg).catch(e => console.warn('FB hist:', e));
+  } catch(e) { console.warn('FB hist error:', e); }
 }
 
 function calcularStatus(c) {
@@ -1010,10 +1031,7 @@ function excluirClienteSelecionado() {
 }
 
 function confirmarExclusao() {
-  if (window._db && window._fbModules) {
-    const { doc, deleteDoc } = window._fbModules;
-    deleteDoc(doc(window._db, 'clientes', String(clienteSelecionadoId))).catch(e => console.warn(e));
-  }
+  fbDeletar('clientes', clienteSelecionadoId);
   clientes = clientes.filter(c => c.id !== clienteSelecionadoId);
   historico = historico.filter(h => h.clienteId !== clienteSelecionadoId);
   clienteSelecionadoId = null;
@@ -1142,7 +1160,9 @@ function salvarPagamento() {
   const idx=historico.findIndex(h => h.clienteId===clienteId&&h.ano===ano&&h.mes===mesIdx);
   const reg={clienteId,ano,mes:mesIdx,status,valor,data,obs};
   if (idx>=0) historico[idx]=reg; else historico.push(reg);
-  salvarHistorico(); fecharModal('modalPagamento'); renderHistorico();
+  salvarHistorico();
+  fbSalvarHistoricoItem(reg);
+  fecharModal('modalPagamento'); renderHistorico();
   showToast('✓ Pagamento registrado!','success');
 }
 
@@ -1564,6 +1584,18 @@ window.addEventListener('fbReady', () => {
   }
   document.getElementById('syncBadge').textContent = '☁️ Nuvem ativa';
   document.getElementById('syncBadge').className = 'sync-badge sync-ok';
+  if (window._clientesFirebase && window._clientesFirebase.length > 0) {
+    clientes = window._clientesFirebase;
+    localStorage.setItem('aquagest_clientes', JSON.stringify(clientes));
+  }
+  if (window._produtosFirebase && window._produtosFirebase.length > 0) {
+    produtos = window._produtosFirebase;
+    localStorage.setItem('aquagest_produtos', JSON.stringify(produtos));
+  }
+  if (window._historicoFirebase && window._historicoFirebase.length > 0) {
+    historico = window._historicoFirebase;
+    localStorage.setItem('aquagest_historico', JSON.stringify(historico));
+  }
   renderDashboard();
   showToast('✓ Conectado ao Firebase!', 'success');
 });
@@ -1989,7 +2021,7 @@ renderDashboard();
 <!-- Firebase CDN -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-  import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAtn8uAazSzISsp_C91YXQzwJKdy6fZPII",
@@ -2004,8 +2036,9 @@ renderDashboard();
   const db = getFirestore(app);
 
   window._db = db;
-  window._fbModules = { doc, setDoc, deleteDoc, collection, getDocs };
+  window._fbModules = { doc, setDoc, deleteDoc, collection, getDocs, onSnapshot };
 
+  // Carregar dados iniciais
   try {
     const [snapC, snapP, snapH] = await Promise.all([
       getDocs(collection(db, 'clientes')),
@@ -2016,6 +2049,40 @@ renderDashboard();
     if (!snapP.empty) window._produtosFirebase = snapP.docs.map(d => d.data());
     if (!snapH.empty) window._historicoFirebase = snapH.docs.map(d => d.data());
   } catch(e) { console.warn('Firebase load:', e); }
+
+  // Listeners em tempo real
+  onSnapshot(collection(db, 'clientes'), snap => {
+    if (!snap.empty) {
+      window._clientesFirebase = snap.docs.map(d => d.data());
+      if (typeof clientes !== 'undefined') {
+        clientes = window._clientesFirebase;
+        localStorage.setItem('aquagest_clientes', JSON.stringify(clientes));
+        if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof renderLista === 'function' && document.getElementById('page-clientes').classList.contains('active')) renderLista();
+      }
+    }
+  });
+
+  onSnapshot(collection(db, 'produtos'), snap => {
+    if (!snap.empty) {
+      window._produtosFirebase = snap.docs.map(d => d.data());
+      if (typeof produtos !== 'undefined') {
+        produtos = window._produtosFirebase;
+        localStorage.setItem('aquagest_produtos', JSON.stringify(produtos));
+        if (typeof renderEstoque === 'function' && document.getElementById('page-estoque').classList.contains('active')) renderEstoque();
+      }
+    }
+  });
+
+  onSnapshot(collection(db, 'historico'), snap => {
+    if (!snap.empty) {
+      window._historicoFirebase = snap.docs.map(d => d.data());
+      if (typeof historico !== 'undefined') {
+        historico = window._historicoFirebase;
+        localStorage.setItem('aquagest_historico', JSON.stringify(historico));
+      }
+    }
+  });
 
   window.dispatchEvent(new Event('fbReady'));
 </script>
