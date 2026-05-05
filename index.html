@@ -497,7 +497,24 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
       <button class="filter-btn" onclick="setFilter(this,'pendente')">⏳ Pendentes</button>
       <button class="filter-btn" onclick="setFilter(this,'atrasado')">⚠ Atrasados</button>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="cobrarTodos()">📲 Cobrar Atrasados</button>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <select class="form-input" id="mesCobrar" style="padding:7px 12px;font-size:0.8rem;width:auto;">
+        <option value="">Mês atual</option>
+        <option value="0">Janeiro</option>
+        <option value="1">Fevereiro</option>
+        <option value="2">Março</option>
+        <option value="3">Abril</option>
+        <option value="4">Maio</option>
+        <option value="5">Junho</option>
+        <option value="6">Julho</option>
+        <option value="7">Agosto</option>
+        <option value="8">Setembro</option>
+        <option value="9">Outubro</option>
+        <option value="10">Novembro</option>
+        <option value="11">Dezembro</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="cobrarTodos()">📲 Cobrar Atrasados</button>
+    </div>
   </div>
   <div class="table-wrap" style="overflow-x:auto;">
     <table><thead><tr><th>Cliente</th><th>Localização</th><th>Vencimento</th><th>Mensalidade</th><th>Status</th><th>Ações</th></tr></thead>
@@ -1643,8 +1660,30 @@ function gerarCobranca(id) {
 }
 
 function cobrarTodos() {
-  const atrasados=clientes.filter(c=>calcularStatus(c)==='atrasado');
-  if (!atrasados.length) { showToast('Nenhum cliente atrasado 🎉','success'); return; }
+  const mesSel = document.getElementById('mesCobrar').value;
+  const mesesNome = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  let atrasados;
+
+  if (mesSel !== '') {
+    // Filtrar por mês selecionado - clientes que NÃO pagaram aquele mês
+    const mesIdx = parseInt(mesSel);
+    const anoAtual = new Date().getFullYear();
+    const clientesQuePagaram = new Set(
+      historico
+        .filter(h => h.mes === mesIdx && h.ano === anoAtual && (h.status === 'pago' || h.status === 'isento'))
+        .map(h => h.clienteId)
+    );
+    atrasados = clientes.filter(c => !clientesQuePagaram.has(c.id));
+    if (!atrasados.length) {
+      showToast(`✓ Todos pagaram em ${mesesNome[mesIdx]}! 🎉`, 'success');
+      return;
+    }
+    showToast(`📲 ${atrasados.length} clientes sem pagamento em ${mesesNome[mesIdx]}`, 'info');
+  } else {
+    atrasados = clientes.filter(c => calcularStatus(c) === 'atrasado');
+    if (!atrasados.length) { showToast('Nenhum cliente atrasado 🎉', 'success'); return; }
+  }
+
   gerarCobranca(atrasados[0].id);
 }
 
