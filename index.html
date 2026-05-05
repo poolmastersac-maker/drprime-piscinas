@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>DR Prime Piscinas</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -204,64 +204,73 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
 
 /* ── MOBILE (até 768px) ── */
 @media(max-width:768px){
-  header{padding:10px 14px;flex-wrap:wrap;gap:8px;}
-  .logo{font-size:1rem;}
-  .logo-icon{width:28px;height:28px;font-size:0.9rem;}
-  .nav-tabs{flex-wrap:wrap;gap:3px;}
-  .nav-tab{padding:6px 10px;font-size:0.72rem;}
+  html, body { overflow-x:hidden; width:100%; }
+  header{padding:8px 10px;flex-wrap:wrap;gap:6px;}
+  .logo{font-size:0.95rem;}
+  .logo-icon{width:26px;height:26px;font-size:0.85rem;}
+  .nav-tabs{flex-wrap:wrap;gap:2px;}
+  .nav-tab{padding:5px 8px;font-size:0.7rem;}
+  .nav-tab span.tab-dot{display:none;}
   #syncBadge{display:none;}
 
   .stats-bar{grid-template-columns:repeat(2,1fr);}
-  .stat{padding:12px 14px;}
-  .stat-value{font-size:1.4rem;}
-  #btnOcultarStats{width:24px;height:24px;font-size:0.75rem;}
+  .stat{padding:10px 12px;}
+  .stat-value{font-size:1.2rem;}
+  .stat-label{font-size:0.6rem;}
 
-  .page{padding:14px 12px;}
+  .page{padding:10px 8px;}
 
-  .toolbar{gap:6px;}
-  .filter-btns{flex-wrap:wrap;gap:4px;}
-  .filter-btn{padding:5px 9px;font-size:0.72rem;}
+  .toolbar{gap:5px;}
+  .filter-btns{flex-wrap:wrap;gap:3px;}
+  .filter-btn{padding:5px 8px;font-size:0.7rem;}
+  .btn{padding:7px 10px;font-size:0.78rem;}
+  .btn-sm{padding:5px 8px;font-size:0.72rem;}
 
-  .table-wrap{overflow-x:auto;}
-  table{min-width:500px;}
-  th,td{padding:9px 10px;font-size:0.8rem;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:480px;}
+  th,td{padding:8px 8px;font-size:0.76rem;}
 
   .clientes-layout{grid-template-columns:1fr;}
-  .painel-cliente{position:static;transform:none;opacity:1;pointer-events:all;}
+  .painel-cliente{position:static;transform:none;opacity:1;pointer-events:all;max-height:none;}
 
   .hist-layout{grid-template-columns:1fr;}
-  .hist-lista{position:static;max-height:250px;}
+  .hist-lista{position:static;max-height:220px;}
   .hist-resumo{grid-template-columns:1fr 1fr;}
   .hist-header-card{flex-direction:column;align-items:flex-start;}
-  .mes-row{grid-template-columns:70px 70px 80px 70px 1fr 60px;font-size:0.75rem;padding:8px 10px;}
+  .mes-row{grid-template-columns:65px 65px 75px 65px 1fr 55px;font-size:0.72rem;padding:7px 8px;}
 
   .estoque-grid{grid-template-columns:1fr;}
-  .estoque-resumo{grid-template-columns:1fr;}
+  .estoque-resumo{grid-template-columns:1fr 1fr;}
 
   .config-layout{grid-template-columns:1fr;}
   .config-menu{position:static;}
-  .config-menu-item{padding:10px 14px;font-size:0.82rem;}
+  .config-menu-item{padding:10px 12px;font-size:0.8rem;}
 
   .servicos-grid{grid-template-columns:1fr;}
-
-  .modal{padding:18px;margin:10px;}
   .form-row{grid-template-columns:1fr;}
 
-  .login-card{padding:24px 18px;margin:10px;}
-  .login-titulo{font-size:1.1rem;}
+  .modal{padding:14px;margin:8px;border-radius:10px;max-height:95vh;}
+  .modal-overlay{align-items:flex-end;}
+  .modal{border-radius:16px 16px 0 0;max-width:100%;}
+
+  .login-card{padding:20px 14px;margin:10px;border-radius:12px;}
+  .login-titulo{font-size:1rem;}
+
+  .vg-table th, .vg-table td{padding:8px 10px;font-size:0.8rem;}
 }
 
 /* ── MOBILE PEQUENO (até 480px) ── */
 @media(max-width:480px){
-  .nav-tab span:not(.tab-dot){display:none;}
-  .nav-tab{padding:8px 10px;}
+  header{padding:6px 8px;}
+  .nav-tab{padding:6px 8px;font-size:0.68rem;}
   .stats-bar{grid-template-columns:repeat(2,1fr);}
-  .stat-value{font-size:1.2rem;}
+  .stat-value{font-size:1.1rem;}
   .hist-resumo{grid-template-columns:1fr;}
-  .mes-row{grid-template-columns:60px 60px 70px 1fr 50px;font-size:0.72rem;}
+  .mes-row{grid-template-columns:55px 55px 65px 1fr 45px;font-size:0.68rem;}
   .mes-row .mes-data{display:none;}
-  .btn{padding:8px 12px;font-size:0.8rem;}
-  .btn-sm{padding:6px 10px;font-size:0.75rem;}
+  .estoque-resumo{grid-template-columns:1fr;}
+  .painel-acoes{gap:5px;}
+  .painel-btn{padding:8px 10px;font-size:0.78rem;}
 }
 
 @media print{body{padding:0;}}
@@ -1830,6 +1839,16 @@ window.addEventListener('fbReady', () => {
   }
   document.getElementById('syncBadge').textContent = '☁️ Nuvem ativa';
   document.getElementById('syncBadge').className = 'sync-badge sync-ok';
+  // Carregar usuários do Firebase
+  if (window._usuariosFirebase && window._usuariosFirebase.length > 0) {
+    const usuariosLocais = getUsuarios();
+    // Mesclar: manter admin local + adicionar usuários da nuvem
+    const mapa = {};
+    usuariosLocais.forEach(u => mapa[u.usuario] = u);
+    window._usuariosFirebase.forEach(u => { if (!mapa[u.usuario]) mapa[u.usuario] = u; });
+    const merged = Object.values(mapa);
+    localStorage.setItem('drprime_usuarios', JSON.stringify(merged));
+  }
   if (window._clientesFirebase && window._clientesFirebase.length > 0) {
     clientes = window._clientesFirebase;
     localStorage.setItem('aquagest_clientes', JSON.stringify(clientes));
@@ -2454,8 +2473,10 @@ function removerUsuarioConfig(idx) {
   const usuarios = getUsuarios();
   if (idx === 0) { showToast('⚠ Não é possível remover o admin', 'error'); return; }
   const nome = usuarios[idx].nome || usuarios[idx].usuario;
+  const usuarioLogin = usuarios[idx].usuario;
   usuarios.splice(idx, 1);
   salvarUsuarios(usuarios);
+  deletarUsuarioFB(usuarioLogin);
   renderConfiguracoes();
   showToast(`Usuário ${nome} removido`, 'info');
 }
@@ -2465,15 +2486,30 @@ const _usuariosDefault = [{nome:'Diego Skamino', usuario:'Diegoskamino', senha:'
 
 function getUsuarios() {
   const saved = JSON.parse(localStorage.getItem('drprime_usuarios') || 'null');
-  // Se não há usuários salvos OU o primeiro usuário ainda é o admin antigo, usar o novo default
   if (!saved || (saved[0] && saved[0].usuario === 'admin')) {
     localStorage.setItem('drprime_usuarios', JSON.stringify(_usuariosDefault));
     return _usuariosDefault;
   }
   return saved;
 }
+
 function salvarUsuarios(lista) {
   localStorage.setItem('drprime_usuarios', JSON.stringify(lista));
+  // Sincronizar com Firebase
+  if (window._db && window._fbModules) {
+    const { setDoc, doc } = window._fbModules;
+    lista.forEach(u => {
+      const id = u.usuario;
+      setDoc(doc(window._db, 'usuarios', id), u).catch(e => console.warn('FB usuarios:', e));
+    });
+  }
+}
+
+function deletarUsuarioFB(usuario) {
+  if (window._db && window._fbModules) {
+    const { deleteDoc, doc } = window._fbModules;
+    deleteDoc(doc(window._db, 'usuarios', usuario)).catch(e => console.warn('FB delete usuario:', e));
+  }
 }
 
 function verificarLogin() {
@@ -2609,14 +2645,16 @@ renderDashboard();
 
   // Carregar dados iniciais
   try {
-    const [snapC, snapP, snapH] = await Promise.all([
+    const [snapC, snapP, snapH, snapU] = await Promise.all([
       getDocs(collection(db, 'clientes')),
       getDocs(collection(db, 'produtos')),
-      getDocs(collection(db, 'historico'))
+      getDocs(collection(db, 'historico')),
+      getDocs(collection(db, 'usuarios'))
     ]);
     if (!snapC.empty) window._clientesFirebase = snapC.docs.map(d => d.data());
     if (!snapP.empty) window._produtosFirebase = snapP.docs.map(d => d.data());
     if (!snapH.empty) window._historicoFirebase = snapH.docs.map(d => d.data());
+    if (!snapU.empty) window._usuariosFirebase = snapU.docs.map(d => d.data());
   } catch(e) { console.warn('Firebase load:', e); }
 
   // Listeners em tempo real
