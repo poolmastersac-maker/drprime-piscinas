@@ -242,9 +242,12 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
   .estoque-grid{grid-template-columns:1fr;}
   .estoque-resumo{grid-template-columns:1fr 1fr;}
 
-  .config-layout{grid-template-columns:1fr;}
-  .config-menu{position:static;}
-  .config-menu-item{padding:10px 12px;font-size:0.8rem;}
+  .config-layout{grid-template-columns:1fr;gap:10px;}
+  .config-menu{position:static;display:flex;flex-wrap:wrap;gap:4px;background:none;border:none;border-radius:0;}
+  .config-menu-item{padding:8px 12px;font-size:0.78rem;border-radius:8px;border:1px solid var(--border);flex:1;min-width:140px;justify-content:center;}
+  .config-section{gap:12px;}
+  .config-card{padding:14px;}
+  .usuario-card{flex-wrap:wrap;gap:8px;}
 
   .servicos-grid{grid-template-columns:1fr;}
   .form-row{grid-template-columns:1fr;}
