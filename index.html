@@ -322,6 +322,26 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
   .recovery-step.active { display:block; }
   .codigo-input { letter-spacing:8px; font-size:1.3rem; text-align:center; font-family:var(--mono); font-weight:700; }
 
+
+  /* VISÃO GERAL */
+  .vg-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:20px; }
+  .vg-card-header { padding:14px 20px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .vg-card-title { font-size:0.9rem; font-weight:800; }
+  .vg-ano-selector { display:flex; align-items:center; gap:8px; }
+  .vg-table { width:100%; border-collapse:collapse; }
+  .vg-table th { padding:11px 16px; text-align:left; font-size:0.68rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-family:var(--mono); background:var(--surface2); border-bottom:1px solid var(--border); }
+  .vg-table th.center { text-align:center; }
+  .vg-table td { padding:12px 16px; font-size:0.87rem; border-bottom:1px solid var(--border); }
+  .vg-table tr:last-child td { border-bottom:none; }
+  .vg-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .vg-mes { font-weight:700; }
+  .vg-num { text-align:center; font-family:var(--mono); font-weight:700; font-size:0.95rem; }
+  .vg-num.pago { color:var(--green); }
+  .vg-num.pendente { color:var(--yellow); }
+  .vg-num.atrasado { color:var(--red); }
+  .vg-num.total { color:var(--accent); }
+  .vg-total-row td { background:var(--surface2); font-weight:800; border-top:2px solid var(--border); }
+
 </style>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -452,6 +472,7 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
       <button class="nav-tab" onclick="navegarPara('historico')"><span class="tab-dot"></span>Histórico</button>
       <button class="nav-tab" onclick="navegarPara('estoque')"><span class="tab-dot"></span>Estoque</button>
       <button class="nav-tab" onclick="navegarPara('servicos')"><span class="tab-dot"></span>Serviços</button>
+      <button class="nav-tab" onclick="navegarPara('visaogeral')"><span class="tab-dot"></span>Visão Geral</button>
       <button class="nav-tab" onclick="navegarPara('configuracoes')"><span class="tab-dot"></span>Configurações</button>
     </div>
   </div>
@@ -752,6 +773,33 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
   </div>
 </div>
 
+
+<!-- VISÃO GERAL -->
+<div class="page" id="page-visaogeral">
+  <div class="vg-card">
+    <div class="vg-card-header">
+      <div class="vg-card-title">📊 Pagamentos por Mês</div>
+      <div class="vg-ano-selector">
+        <button class="year-btn" onclick="mudarAnoVG(-1)">‹</button>
+        <span class="year-display" id="vgAnoDisplay">2026</span>
+        <button class="year-btn" onclick="mudarAnoVG(1)">›</button>
+      </div>
+    </div>
+    <table class="vg-table">
+      <thead>
+        <tr>
+          <th>Mês</th>
+          <th class="center">✅ Pagos</th>
+          <th class="center">⏳ Pendentes</th>
+          <th class="center">⚠️ Atrasados</th>
+          <th class="center">Total Clientes</th>
+        </tr>
+      </thead>
+      <tbody id="vgTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- MODAL COBRANÇA -->
 <div class="modal-overlay" id="modalCobranca">
   <div class="modal">
@@ -1035,13 +1083,14 @@ function navegarPara(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + pagina).classList.add('active');
-  const idx = {dashboard:0,clientes:1,historico:2,estoque:3,servicos:4,configuracoes:5}[pagina];
+  const idx = {dashboard:0,clientes:1,historico:2,estoque:3,servicos:4,visaogeral:5,configuracoes:6}[pagina];
   document.querySelectorAll('.nav-tab')[idx].classList.add('active');
   if (pagina === 'clientes') renderLista();
   if (pagina === 'dashboard') renderDashboard();
   if (pagina === 'historico') { renderHistLista(); if (histClienteId) renderHistorico(); }
   if (pagina === 'estoque') renderEstoque();
   if (pagina === 'servicos') renderServicos();
+  if (pagina === 'visaogeral') renderVisaoGeral();
   if (pagina === 'configuracoes') renderConfiguracoes();
 }
 
@@ -1539,6 +1588,26 @@ function imprimirRecibo() {
   .recovery-step { display:none; }
   .recovery-step.active { display:block; }
   .codigo-input { letter-spacing:8px; font-size:1.3rem; text-align:center; font-family:var(--mono); font-weight:700; }
+
+
+  /* VISÃO GERAL */
+  .vg-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:20px; }
+  .vg-card-header { padding:14px 20px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .vg-card-title { font-size:0.9rem; font-weight:800; }
+  .vg-ano-selector { display:flex; align-items:center; gap:8px; }
+  .vg-table { width:100%; border-collapse:collapse; }
+  .vg-table th { padding:11px 16px; text-align:left; font-size:0.68rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-family:var(--mono); background:var(--surface2); border-bottom:1px solid var(--border); }
+  .vg-table th.center { text-align:center; }
+  .vg-table td { padding:12px 16px; font-size:0.87rem; border-bottom:1px solid var(--border); }
+  .vg-table tr:last-child td { border-bottom:none; }
+  .vg-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .vg-mes { font-weight:700; }
+  .vg-num { text-align:center; font-family:var(--mono); font-weight:700; font-size:0.95rem; }
+  .vg-num.pago { color:var(--green); }
+  .vg-num.pendente { color:var(--yellow); }
+  .vg-num.atrasado { color:var(--red); }
+  .vg-num.total { color:var(--accent); }
+  .vg-total-row td { background:var(--surface2); font-weight:800; border-top:2px solid var(--border); }
 
 </style>
 </head><body>${conteudo}</body></html>`);
@@ -2055,6 +2124,55 @@ function exportarExcel(tipo) {
   showToast('✓ Arquivo Excel exportado com sucesso!', 'success');
 }
 
+
+
+// ── VISÃO GERAL ──
+let vgAno = new Date().getFullYear();
+
+function mudarAnoVG(delta) {
+  vgAno += delta;
+  document.getElementById('vgAnoDisplay').textContent = vgAno;
+  renderVisaoGeral();
+}
+
+function renderVisaoGeral() {
+  document.getElementById('vgAnoDisplay').textContent = vgAno;
+  const tbody = document.getElementById('vgTableBody');
+  const totalClientes = clientes.length;
+
+  let totalPagos = 0, totalPendentes = 0, totalAtrasados = 0;
+
+  const rows = MESES.map((mes, mi) => {
+    // Contar pagos no histórico desse mês/ano
+    const pagosHist = historico.filter(h => h.ano === vgAno && h.mes === mi && (h.status === 'pago' || h.status === 'isento')).length;
+    // Pendentes e atrasados = total - pagos
+    const nPagos = pagosHist;
+    const nPendentes = Math.max(0, totalClientes - nPagos);
+    const nAtrasados = 0; // Calculado pelo sistema
+
+    totalPagos += nPagos;
+    totalPendentes += nPendentes;
+
+    return `<tr>
+      <td class="vg-mes">${mes}</td>
+      <td class="vg-num pago">${nPagos}</td>
+      <td class="vg-num pendente">${nPendentes}</td>
+      <td class="vg-num atrasado">—</td>
+      <td class="vg-num total">${totalClientes}</td>
+    </tr>`;
+  });
+
+  // Linha de totais
+  rows.push(`<tr class="vg-total-row">
+    <td class="vg-mes">TOTAL ${vgAno}</td>
+    <td class="vg-num pago">${totalPagos}</td>
+    <td class="vg-num pendente">${totalPendentes}</td>
+    <td class="vg-num atrasado">—</td>
+    <td class="vg-num total">${totalClientes * 12}</td>
+  </tr>`);
+
+  tbody.innerHTML = rows.join('');
+}
 
 // ── EXPORTAR PDF ──
 function exportarPDF(tipo) {
