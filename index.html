@@ -405,6 +405,37 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
   .perm-checkbox { width:16px; height:16px; accent-color:var(--green); cursor:pointer; }
   .perm-label { font-size:0.8rem; font-weight:600; }
 
+
+  /* NECESSIDADES */
+  .nec-page-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .nec-page-header { padding:14px 20px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .nec-page-title { font-size:0.9rem; font-weight:800; }
+  .nec-page-filters { display:flex; gap:6px; flex-wrap:wrap; }
+  .nec-row-item { display:grid; grid-template-columns:180px 1fr 120px 90px 90px 80px; gap:10px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--border); font-size:0.85rem; transition:background 0.15s; }
+  .nec-row-item:hover { background:rgba(255,255,255,0.02); }
+  .nec-row-item:last-child { border-bottom:none; }
+  .nec-row-header { background:var(--surface2); font-size:0.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-family:var(--mono); }
+  .nec-cliente { font-weight:700; }
+  .nec-produtos { font-size:0.8rem; color:var(--muted); }
+  .nec-obs { font-size:0.78rem; color:var(--muted); font-style:italic; }
+  .nec-data { font-family:var(--mono); font-size:0.78rem; color:var(--muted); }
+  .nec-toggle { display:flex; align-items:center; justify-content:center; }
+  .nec-toggle input[type=checkbox] { width:18px; height:18px; accent-color:var(--green); cursor:pointer; }
+  .nec-row-item.entregue { opacity:0.6; }
+  .nec-row-item.entregue .nec-cliente { text-decoration:line-through; }
+  .nec-badge-entregue { background:rgba(0,229,160,0.12); color:var(--green); font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:700; font-family:var(--mono); }
+  .nec-badge-pendente { background:rgba(255,184,0,0.12); color:var(--yellow); font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:700; font-family:var(--mono); }
+  .nec-badge-pago { background:rgba(0,229,160,0.12); color:var(--green); font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:700; font-family:var(--mono); }
+  .nec-resumo { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  .nec-res-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .nec-res-label { font-size:0.65rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; font-family:var(--mono); }
+  .nec-res-value { font-size:1.4rem; font-weight:800; }
+  @media(max-width:768px) {
+    .nec-row-item { grid-template-columns:1fr 1fr; gap:6px; }
+    .nec-row-header { display:none; }
+    .nec-resumo { grid-template-columns:repeat(2,1fr); }
+  }
+
 </style>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -545,6 +576,7 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
       <button class="nav-tab" onclick="navegarPara('estoque')"><span class="tab-dot"></span>Estoque</button>
       <button class="nav-tab" onclick="navegarPara('servicos')"><span class="tab-dot"></span>Serviços</button>
       <button class="nav-tab" onclick="navegarPara('visaogeral')"><span class="tab-dot"></span>Visão Geral</button>
+      <button class="nav-tab" onclick="navegarPara('necessidades')"><span class="tab-dot"></span>Necessidades</button>
       <button class="nav-tab" onclick="navegarPara('configuracoes')"><span class="tab-dot"></span>Configurações</button>
     </div>
   </div>
@@ -920,6 +952,45 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
   </div>
 </div>
 
+
+<!-- NECESSIDADES DE CLIENTES -->
+<div class="page" id="page-necessidades">
+  <div class="nec-resumo">
+    <div class="nec-res-card"><div class="nec-res-label">Total Pedidos</div><div class="nec-res-value" id="necResTotal" style="color:var(--accent)">0</div></div>
+    <div class="nec-res-card"><div class="nec-res-label">Pendentes</div><div class="nec-res-value" id="necResPendentes" style="color:var(--yellow)">0</div></div>
+    <div class="nec-res-card"><div class="nec-res-label">Entregues</div><div class="nec-res-value" id="necResEntregues" style="color:var(--green)">0</div></div>
+    <div class="nec-res-card"><div class="nec-res-label">Pagos</div><div class="nec-res-value" id="necResPagos" style="color:var(--green)">0</div></div>
+  </div>
+
+  <div class="nec-page-card">
+    <div class="nec-page-header">
+      <div class="nec-page-title">🧴 Necessidades de Clientes</div>
+      <div class="nec-page-filters">
+        <button class="filter-btn active" onclick="setFiltroNec(this,'todos')">Todos</button>
+        <button class="filter-btn" onclick="setFiltroNec(this,'pendente')">⏳ Pendentes</button>
+        <button class="filter-btn" onclick="setFiltroNec(this,'entregue')">✅ Entregues</button>
+        <button class="filter-btn" onclick="setFiltroNec(this,'pago')">💰 Pagos</button>
+      </div>
+    </div>
+
+    <div class="nec-row-item nec-row-header">
+      <span>Cliente</span>
+      <span>Produtos / Observação</span>
+      <span>Data / Técnico</span>
+      <span style="text-align:center;">Entregue</span>
+      <span style="text-align:center;">Pago</span>
+      <span></span>
+    </div>
+
+    <div id="necPageBody">
+      <div class="empty" style="padding:40px;">
+        <div class="empty-icon">🧴</div>
+        <div>Nenhuma necessidade registrada</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL COBRANÇA -->
 <div class="modal-overlay" id="modalCobranca">
   <div class="modal">
@@ -1016,6 +1087,10 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
     <p style="color:var(--muted);font-size:0.83rem;margin-bottom:14px;">Cliente: <strong id="necClienteNome" style="color:var(--text)"></strong></p>
     <div style="font-size:0.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:10px;">Informe a quantidade de cada produto utilizado:</div>
     <div id="necListaProdutos" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:320px;overflow-y:auto;padding-right:4px;"></div>
+    <div class="form-group" style="margin-top:8px;">
+      <label class="form-label">📝 Observação</label>
+      <textarea class="form-input" id="necObservacao" placeholder="Anote aqui pontos importantes sobre este cliente ou serviço..." rows="3" style="resize:vertical;min-height:70px;"></textarea>
+    </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn btn-ghost btn-sm" onclick="fecharModal('modalNecessidade')">Cancelar</button>
       <button class="btn btn-primary btn-sm" onclick="confirmarNecessidade()">✓ Confirmar e Descontar</button>
@@ -1209,7 +1284,7 @@ function navegarPara(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + pagina).classList.add('active');
-  const idx = {dashboard:0,clientes:1,historico:2,estoque:3,servicos:4,visaogeral:5,configuracoes:6}[pagina];
+  const idx = {dashboard:0,clientes:1,historico:2,estoque:3,servicos:4,visaogeral:5,necessidades:6,configuracoes:7}[pagina];
   document.querySelectorAll('.nav-tab')[idx].classList.add('active');
   if (pagina === 'clientes') renderLista();
   if (pagina === 'dashboard') renderDashboard();
@@ -1217,6 +1292,7 @@ function navegarPara(pagina) {
   if (pagina === 'estoque') renderEstoque();
   if (pagina === 'servicos') renderServicos();
   if (pagina === 'visaogeral') renderVisaoGeral();
+  if (pagina === 'necessidades') renderNecessidades();
   if (pagina === 'configuracoes') renderConfiguracoes();
 }
 
@@ -1585,6 +1661,7 @@ function abrirNecessidade() {
       <div class="nec-qtd-wrap"><span class="nec-qtd-label">Qtd</span><input type="number" class="nec-qtd-input" id="nec-qtd-${p.id}" value="0" min="0" max="${p.qtd}"></div>
     </div>`;
   }).join('');
+  document.getElementById('necObservacao').value = '';
   document.getElementById('modalNecessidade').classList.add('open');
 }
 
@@ -1608,6 +1685,41 @@ function confirmarNecessidade() {
     const idx=produtos.findIndex(x=>x.id===p.id);
     if (idx>=0) produtos[idx].qtd=Math.max(0,produtos[idx].qtd-qtd);
   });
+  // Salvar observação no histórico do cliente
+  const obs = document.getElementById('necObservacao').value.trim();
+  if (obs && clienteSelecionadoId) {
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    const horaHoje = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    const tecnico = sessionStorage.getItem('drprime_usuario') || 'Admin';
+    // Salvar observação no Firebase
+    if (window._db && window._fbModules) {
+      const { setDoc, doc } = window._fbModules;
+      const key = 'obs_' + clienteSelecionadoId + '_' + Date.now();
+      setDoc(doc(window._db, 'observacoes', key), {
+        clienteId: clienteSelecionadoId,
+        obs,
+        tecnico,
+        data: dataHoje,
+        hora: horaHoje
+      }).catch(e => console.warn('FB obs:', e));
+    }
+  }
+  // Registrar na página de necessidades
+  const novaObs = document.getElementById('necObservacao').value.trim();
+  const novaNec = {
+    id: Date.now(),
+    clienteId: clienteSelecionadoId,
+    itens: itens,
+    obs: novaObs,
+    tecnico: sessionStorage.getItem('drprime_usuario') || 'Admin',
+    data: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    entregue: false,
+    pago: false
+  };
+  necessidades.push(novaNec);
+  salvarNecessidades();
+
+  document.getElementById('necObservacao').value = '';
   salvarProdutos(); fecharModal('modalNecessidade'); gerarRecibo(itens);
   showToast('✓ '+usados.length+' produto(s) descontado(s)!','success');
 }
@@ -1794,6 +1906,37 @@ function imprimirRecibo() {
   .perm-item.ativo { border-color:var(--green); background:rgba(0,229,160,0.08); }
   .perm-checkbox { width:16px; height:16px; accent-color:var(--green); cursor:pointer; }
   .perm-label { font-size:0.8rem; font-weight:600; }
+
+
+  /* NECESSIDADES */
+  .nec-page-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .nec-page-header { padding:14px 20px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .nec-page-title { font-size:0.9rem; font-weight:800; }
+  .nec-page-filters { display:flex; gap:6px; flex-wrap:wrap; }
+  .nec-row-item { display:grid; grid-template-columns:180px 1fr 120px 90px 90px 80px; gap:10px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--border); font-size:0.85rem; transition:background 0.15s; }
+  .nec-row-item:hover { background:rgba(255,255,255,0.02); }
+  .nec-row-item:last-child { border-bottom:none; }
+  .nec-row-header { background:var(--surface2); font-size:0.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-family:var(--mono); }
+  .nec-cliente { font-weight:700; }
+  .nec-produtos { font-size:0.8rem; color:var(--muted); }
+  .nec-obs { font-size:0.78rem; color:var(--muted); font-style:italic; }
+  .nec-data { font-family:var(--mono); font-size:0.78rem; color:var(--muted); }
+  .nec-toggle { display:flex; align-items:center; justify-content:center; }
+  .nec-toggle input[type=checkbox] { width:18px; height:18px; accent-color:var(--green); cursor:pointer; }
+  .nec-row-item.entregue { opacity:0.6; }
+  .nec-row-item.entregue .nec-cliente { text-decoration:line-through; }
+  .nec-badge-entregue { background:rgba(0,229,160,0.12); color:var(--green); font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:700; font-family:var(--mono); }
+  .nec-badge-pendente { background:rgba(255,184,0,0.12); color:var(--yellow); font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:700; font-family:var(--mono); }
+  .nec-badge-pago { background:rgba(0,229,160,0.12); color:var(--green); font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:700; font-family:var(--mono); }
+  .nec-resumo { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  .nec-res-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .nec-res-label { font-size:0.65rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; font-family:var(--mono); }
+  .nec-res-value { font-size:1.4rem; font-weight:800; }
+  @media(max-width:768px) {
+    .nec-row-item { grid-template-columns:1fr 1fr; gap:6px; }
+    .nec-row-header { display:none; }
+    .nec-resumo { grid-template-columns:repeat(2,1fr); }
+  }
 
 </style>
 </head><body>${conteudo}</body></html>`);
@@ -2010,6 +2153,11 @@ window.addEventListener('fbReady', () => {
     localStorage.setItem('aquagest_historico', JSON.stringify(historico));
   }
   // Carregar permissões do Firebase
+  // Carregar necessidades do Firebase
+  if (window._necessidadesFirebase && window._necessidadesFirebase.length > 0) {
+    necessidades = window._necessidadesFirebase;
+    localStorage.setItem('drprime_necessidades', JSON.stringify(necessidades));
+  }
   if (window._permissoesFirebase) {
     permissoes = window._permissoesFirebase;
     localStorage.setItem('drprime_permissoes', JSON.stringify(permissoes));
@@ -2448,6 +2596,112 @@ function filtrarClientesPorTecnico(lista) {
   return lista.filter(c => c.tecnico === tecnicoAtual.usuario);
 }
 
+
+
+// ── PÁGINA NECESSIDADES ──
+let necessidades = JSON.parse(localStorage.getItem('drprime_necessidades') || '[]');
+let filtroNec = 'todos';
+
+function salvarNecessidades() {
+  localStorage.setItem('drprime_necessidades', JSON.stringify(necessidades));
+  if (window._db && window._fbModules) {
+    const { setDoc, doc } = window._fbModules;
+    necessidades.forEach(n => {
+      setDoc(doc(window._db, 'necessidades', String(n.id)), n).catch(e => console.warn('FB nec:', e));
+    });
+  }
+}
+
+function setFiltroNec(btn, filtro) {
+  document.querySelectorAll('#page-necessidades .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtroNec = filtro;
+  renderNecessidades();
+}
+
+function renderNecessidades() {
+  // Resumo
+  document.getElementById('necResTotal').textContent = necessidades.length;
+  document.getElementById('necResPendentes').textContent = necessidades.filter(n => !n.entregue).length;
+  document.getElementById('necResEntregues').textContent = necessidades.filter(n => n.entregue).length;
+  document.getElementById('necResPagos').textContent = necessidades.filter(n => n.pago).length;
+
+  let lista = [...necessidades].sort((a,b) => b.id - a.id);
+  if (filtroNec === 'pendente') lista = lista.filter(n => !n.entregue);
+  if (filtroNec === 'entregue') lista = lista.filter(n => n.entregue);
+  if (filtroNec === 'pago') lista = lista.filter(n => n.pago);
+
+  const body = document.getElementById('necPageBody');
+  if (!lista.length) {
+    body.innerHTML = `<div class="empty" style="padding:40px;"><div class="empty-icon">🧴</div><div>Nenhuma necessidade encontrada</div></div>`;
+    return;
+  }
+
+  body.innerHTML = lista.map(n => {
+    const cliente = clientes.find(c => c.id === n.clienteId);
+    const nomeCliente = cliente ? cliente.nome : 'Cliente removido';
+    const produtosTexto = n.itens ? n.itens.map(i => `${i.nome} (${i.qtd})`).join(', ') : '—';
+    const rowClass = n.entregue ? 'entregue' : '';
+
+    return `<div class="nec-row-item ${rowClass}">
+      <div>
+        <div class="nec-cliente">${nomeCliente}</div>
+        <div style="margin-top:3px;">
+          ${n.entregue ? '<span class="nec-badge-entregue">✅ Entregue</span>' : '<span class="nec-badge-pendente">⏳ Pendente</span>'}
+          ${n.pago ? '<span class="nec-badge-pago" style="margin-left:4px;">💰 Pago</span>' : ''}
+        </div>
+      </div>
+      <div>
+        <div class="nec-produtos">${produtosTexto}</div>
+        ${n.obs ? `<div class="nec-obs">📝 ${n.obs}</div>` : ''}
+      </div>
+      <div>
+        <div class="nec-data">${n.data || '—'}</div>
+        <div class="nec-data">👤 ${n.tecnico || 'Admin'}</div>
+      </div>
+      <div class="nec-toggle">
+        <input type="checkbox" ${n.entregue?'checked':''} onchange="toggleNecEntregue(${n.id}, this.checked)" title="Marcar como entregue">
+      </div>
+      <div class="nec-toggle">
+        <input type="checkbox" ${n.pago?'checked':''} onchange="toggleNecPago(${n.id}, this.checked)" title="Marcar como pago">
+      </div>
+      <div>
+        <button class="action-btn del" onclick="excluirNecessidade(${n.id})" title="Excluir">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNecEntregue(id, valor) {
+  const idx = necessidades.findIndex(n => n.id === id);
+  if (idx >= 0) {
+    necessidades[idx].entregue = valor;
+    salvarNecessidades();
+    renderNecessidades();
+    showToast(valor ? '✅ Marcado como entregue!' : 'Desmarcado', 'success');
+  }
+}
+
+function toggleNecPago(id, valor) {
+  const idx = necessidades.findIndex(n => n.id === id);
+  if (idx >= 0) {
+    necessidades[idx].pago = valor;
+    salvarNecessidades();
+    renderNecessidades();
+    showToast(valor ? '💰 Marcado como pago!' : 'Desmarcado', 'success');
+  }
+}
+
+function excluirNecessidade(id) {
+  necessidades = necessidades.filter(n => n.id !== id);
+  if (window._db && window._fbModules) {
+    const { deleteDoc, doc } = window._fbModules;
+    deleteDoc(doc(window._db, 'necessidades', String(id))).catch(e => console.warn(e));
+  }
+  salvarNecessidades();
+  renderNecessidades();
+  showToast('Necessidade removida', 'info');
+}
 
 // ── CONTROLE DE PERMISSÕES ──
 const TODAS_PERMISSOES = {
@@ -2988,6 +3242,8 @@ renderDashboard();
     if (!snapP.empty) window._produtosFirebase = snapP.docs.map(d => d.data());
     if (!snapH.empty) window._historicoFirebase = snapH.docs.map(d => d.data());
     if (!snapU.empty) window._usuariosFirebase = snapU.docs.map(d => d.data());
+    const snapNec = await getDocs(collection(db, 'necessidades'));
+    if (!snapNec.empty) window._necessidadesFirebase = snapNec.docs.map(d => d.data());
     // Carregar permissões
     try {
       const { getDoc } = await import('https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js');
