@@ -309,6 +309,7 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
 
   /* CONFIGURAÇÕES */
   .config-layout { display:grid; grid-template-columns:240px 1fr; gap:20px; align-items:start; }
+  @media(max-width:900px){ .config-layout { grid-template-columns:1fr !important; } .config-menu { display:flex !important; flex-wrap:wrap !important; gap:6px !important; background:none !important; border:none !important; } .config-menu-item { border:1px solid var(--border) !important; border-radius:8px !important; flex:1 !important; min-width:120px !important; justify-content:center !important; } }
   .config-menu { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; position:sticky; top:80px; }
   .config-menu-item { display:flex; align-items:center; gap:10px; padding:13px 18px; border-bottom:1px solid var(--border); cursor:pointer; font-size:0.88rem; font-weight:600; color:var(--muted); transition:all 0.15s; }
   .config-menu-item:last-child { border-bottom:none; }
@@ -354,6 +355,42 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
   .vg-num.total { color:var(--accent); }
   .vg-total-row td { background:var(--surface2); font-weight:800; border-top:2px solid var(--border); }
 
+
+  /* CONFIGURAÇÕES MOBILE - FORÇADO */
+  @media(max-width:900px){
+    .config-layout{
+      grid-template-columns:1fr !important;
+      gap:12px !important;
+    }
+    .config-menu{
+      display:flex !important;
+      flex-direction:row !important;
+      flex-wrap:wrap !important;
+      gap:6px !important;
+      background:none !important;
+      border:none !important;
+      border-radius:0 !important;
+    }
+    .config-menu-item{
+      border:1px solid var(--border) !important;
+      border-radius:8px !important;
+      flex:1 1 auto !important;
+      min-width:130px !important;
+      justify-content:center !important;
+      border-left:1px solid var(--border) !important;
+    }
+    .config-menu-item.active{
+      border-left:1px solid var(--accent2) !important;
+      background:rgba(0,120,255,0.1) !important;
+    }
+    .config-section.active{
+      display:flex !important;
+      flex-direction:column !important;
+      gap:12px !important;
+    }
+  }
+
+  .badge-suspended { background:rgba(107,127,168,0.15); color:var(--muted); }
 </style>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -461,6 +498,15 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
         <div class="form-group"><label class="form-label">Usuário</label><input type="text" class="form-input" id="novoUsuario" placeholder="Ex: diego"></div>
         <div class="form-group"><label class="form-label">Senha</label><input type="password" class="form-input" id="novaSenha" placeholder="Mínimo 4 caracteres"></div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Perfil de Acesso</label>
+        <select class="form-input" id="cfgPerfil">
+          <option value="admin">👑 Administrador — Acesso total</option>
+          <option value="gerente">👔 Gerente — Sem configurações</option>
+          <option value="tecnico">🔧 Técnico — Apenas seus clientes</option>
+          <option value="financeiro">📊 Financeiro — Dashboard e pagamentos</option>
+        </select>
+      </div>
       <div style="display:flex;justify-content:flex-end;">
         <button class="btn btn-primary btn-sm" onclick="adicionarUsuario()">➕ Adicionar</button>
       </div>
@@ -549,10 +595,16 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
         <div class="form-row">
           <div class="form-group"><label class="form-label">Mensalidade R$ *</label><input type="number" class="form-input" id="fValor" placeholder="250"></div>
           <div class="form-group"><label class="form-label">Status</label>
-            <select class="form-input" id="fStatus"><option value="pendente">Pendente</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option></select>
+            <select class="form-input" id="fStatus"><option value="pendente">Pendente</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option><option value="suspenso">Suspenso</option></select>
           </div>
         </div>
         <div class="form-group"><label class="form-label">Localização</label><input type="text" class="form-input" id="fEndereco" placeholder="Ex: Santa Adelia"></div>
+        <div class="form-group">
+          <label class="form-label">Técnico Responsável</label>
+          <select class="form-input" id="fTecnico">
+            <option value="">— Selecione o técnico —</option>
+          </select>
+        </div>
         <div class="form-group">
           <label class="form-label">Tipo de Pagamento</label>
           <select class="form-input" id="fPagRetro">
@@ -1073,7 +1125,13 @@ function salvar() {
   fbSync('clientes', clientes);
 }
 function salvarProdutos() { localStorage.setItem('aquagest_produtos', JSON.stringify(produtos)); fbSync('produtos', produtos); }
-function salvarHistorico() { localStorage.setItem('aquagest_historico', JSON.stringify(historico)); }
+function salvarHistorico() {
+  localStorage.setItem('aquagest_historico', JSON.stringify(historico));
+  // Usar fbSalvarHistoricoItem pois histórico usa chave composta
+  if (window._db && window._fbModules) {
+    historico.forEach(h => fbSalvarHistoricoItem(h));
+  }
+}
 
 // Firebase sync
 function fbSync(colecao, dados) {
@@ -1111,7 +1169,7 @@ function calcularStatus(c) {
 }
 
 function badgeHTML(status) {
-  const map = { pago:['badge-green','Pago'], pendente:['badge-yellow','Pendente'], atrasado:['badge-red','Atrasado'], isento:['badge-green','Isento'] };
+  const map = { pago:['badge-green','Pago'], pendente:['badge-yellow','Pendente'], atrasado:['badge-red','Atrasado'], isento:['badge-green','Isento'], suspenso:['badge-suspended','Suspenso'] };
   const [cls,label] = map[status] || ['badge-yellow','Pendente'];
   return `<span class="badge ${cls}">${label}</span>`;
 }
@@ -1146,11 +1204,12 @@ function setFilter(btn, filtro) {
 function renderDashboard() {
   const busca = document.getElementById('searchInput').value.toLowerCase();
   const tbody = document.getElementById('tableBody');
-  const lista = clientes.filter(c => {
+  let lista = clientes.filter(c => {
     const match = c.nome.toLowerCase().includes(busca) || (c.tel||'').includes(busca);
     const status = calcularStatus(c);
     return match && (filtroAtual === 'todos' || status === filtroAtual);
   });
+  lista = filtrarClientesPorTecnico(lista);
   if (!lista.length) {
     tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🏊</div><div>Nenhum cliente encontrado</div></div></td></tr>`;
   } else {
@@ -1174,7 +1233,8 @@ function renderDashboard() {
 
 function renderLista() {
   const busca = (document.getElementById('searchClientes')?.value||'').toLowerCase();
-  const lista = clientes.filter(c => c.nome.toLowerCase().includes(busca)||(c.tel||'').includes(busca));
+  let lista = clientes.filter(c => c.nome.toLowerCase().includes(busca)||(c.tel||'').includes(busca));
+  lista = filtrarClientesPorTecnico(lista);
   const container = document.getElementById('listaBody');
   if (!lista.length) { container.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><div>Nenhum cliente cadastrado</div></div>`; return; }
   container.innerHTML = lista.map(c => {
@@ -1217,6 +1277,8 @@ function editarClienteSelecionado() {
   document.getElementById('fStatus').value = c.status;
   document.getElementById('fEndereco').value = c.endereco||'';
   document.getElementById('fPagRetro').value = c.pagRetro ? '1' : '0';
+  atualizarSelectTecnico();
+  document.getElementById('fTecnico').value = c.tecnico || '';
   document.getElementById('formTitulo').textContent = 'Editar Cliente';
   document.getElementById('formIcon').textContent = '✏️';
   document.querySelector('.form-card').scrollIntoView({behavior:'smooth'});
@@ -1265,13 +1327,14 @@ function saveClient() {
   const status = document.getElementById('fStatus').value;
   const endereco = document.getElementById('fEndereco').value.trim();
   const pagRetro = document.getElementById('fPagRetro').value === '1';
+  const tecnico = document.getElementById('fTecnico').value;
   if (!nome||!dia||!valor) { showToast('⚠ Preencha os campos obrigatórios','error'); return; }
   const editId = document.getElementById('editId').value;
   if (editId) {
     const idx = clientes.findIndex(c => c.id == editId);
-    if (idx >= 0) { clientes[idx] = {...clientes[idx],nome,tel,dia,valor,status,endereco,pagRetro}; showToast('✓ Cliente atualizado!','success'); }
+    if (idx >= 0) { clientes[idx] = {...clientes[idx],nome,tel,dia,valor,status,endereco,pagRetro,tecnico}; showToast('✓ Cliente atualizado!','success'); }
   } else {
-    clientes.push({id:Date.now(),nome,tel,dia,valor,status,endereco,pagRetro});
+    clientes.push({id:Date.now(),nome,tel,dia,valor,status,endereco,pagRetro,tecnico});
     showToast('✓ Cliente cadastrado!','success');
   }
   salvar(); limparForm(); renderLista(); renderDashboard();
@@ -1605,6 +1668,7 @@ function imprimirRecibo() {
 
   /* CONFIGURAÇÕES */
   .config-layout { display:grid; grid-template-columns:240px 1fr; gap:20px; align-items:start; }
+  @media(max-width:900px){ .config-layout { grid-template-columns:1fr !important; } .config-menu { display:flex !important; flex-wrap:wrap !important; gap:6px !important; background:none !important; border:none !important; } .config-menu-item { border:1px solid var(--border) !important; border-radius:8px !important; flex:1 !important; min-width:120px !important; justify-content:center !important; } }
   .config-menu { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; position:sticky; top:80px; }
   .config-menu-item { display:flex; align-items:center; gap:10px; padding:13px 18px; border-bottom:1px solid var(--border); cursor:pointer; font-size:0.88rem; font-weight:600; color:var(--muted); transition:all 0.15s; }
   .config-menu-item:last-child { border-bottom:none; }
@@ -1650,6 +1714,42 @@ function imprimirRecibo() {
   .vg-num.total { color:var(--accent); }
   .vg-total-row td { background:var(--surface2); font-weight:800; border-top:2px solid var(--border); }
 
+
+  /* CONFIGURAÇÕES MOBILE - FORÇADO */
+  @media(max-width:900px){
+    .config-layout{
+      grid-template-columns:1fr !important;
+      gap:12px !important;
+    }
+    .config-menu{
+      display:flex !important;
+      flex-direction:row !important;
+      flex-wrap:wrap !important;
+      gap:6px !important;
+      background:none !important;
+      border:none !important;
+      border-radius:0 !important;
+    }
+    .config-menu-item{
+      border:1px solid var(--border) !important;
+      border-radius:8px !important;
+      flex:1 1 auto !important;
+      min-width:130px !important;
+      justify-content:center !important;
+      border-left:1px solid var(--border) !important;
+    }
+    .config-menu-item.active{
+      border-left:1px solid var(--accent2) !important;
+      background:rgba(0,120,255,0.1) !important;
+    }
+    .config-section.active{
+      display:flex !important;
+      flex-direction:column !important;
+      gap:12px !important;
+    }
+  }
+
+  .badge-suspended { background:rgba(107,127,168,0.15); color:var(--muted); }
 </style>
 </head><body>${conteudo}</body></html>`);
   janela.document.close(); janela.focus();
@@ -2247,6 +2347,54 @@ function renderVisaoGeral() {
   tbody.innerHTML = rows.join('');
 }
 
+
+// ── PERMISSÕES E TÉCNICO ──
+const ABAS_PERFIL = {
+  admin:     ['dashboard','clientes','historico','estoque','servicos','visaogeral','configuracoes'],
+  gerente:   ['dashboard','clientes','historico','estoque','servicos','visaogeral'],
+  tecnico:   ['clientes','estoque'],
+  financeiro:['dashboard','historico','visaogeral']
+};
+
+const NOMES_ABAS = ['dashboard','clientes','historico','estoque','servicos','visaogeral','configuracoes'];
+
+let perfilAtual = 'admin';
+let tecnicoAtual = null;
+
+function aplicarPermissoes(usuario) {
+  const usuarios = getUsuarios();
+  const u = usuarios.find(x => x.usuario === usuario);
+  perfilAtual = u?.perfil || 'admin';
+  tecnicoAtual = perfilAtual === 'tecnico' ? u : null;
+
+  // Mostrar/ocultar abas conforme perfil
+  const abasPermitidas = ABAS_PERFIL[perfilAtual] || ABAS_PERFIL['admin'];
+  document.querySelectorAll('.nav-tab').forEach((tab, i) => {
+    const aba = NOMES_ABAS[i];
+    tab.style.display = aba && abasPermitidas.includes(aba) ? 'flex' : 'none';
+  });
+
+  // Navegar para primeira aba permitida
+  navegarPara(abasPermitidas[0]);
+
+  // Atualizar select de técnico no formulário de clientes
+  atualizarSelectTecnico();
+}
+
+function atualizarSelectTecnico() {
+  const sel = document.getElementById('fTecnico');
+  if (!sel) return;
+  const usuarios = getUsuarios();
+  const tecnicos = usuarios.filter(u => u.perfil === 'tecnico');
+  sel.innerHTML = '<option value="">— Selecione o técnico —</option>' +
+    tecnicos.map(t => `<option value="${t.usuario}">${t.nome}</option>`).join('');
+}
+
+function filtrarClientesPorTecnico(lista) {
+  if (perfilAtual !== 'tecnico' || !tecnicoAtual) return lista;
+  return lista.filter(c => c.tecnico === tecnicoAtual.usuario);
+}
+
 // ── EXPORTAR PDF ──
 function exportarPDF(tipo) {
   if (typeof window.jspdf === 'undefined') {
@@ -2425,13 +2573,14 @@ function renderConfiguracoes() {
     lista.innerHTML = '<div class="empty"><div>Nenhum usuário cadastrado</div></div>';
     return;
   }
+  const perfilLabel = {admin:'👑 Admin', gerente:'👔 Gerente', tecnico:'🔧 Técnico', financeiro:'📊 Financeiro'};
   lista.innerHTML = usuarios.map((u, i) => `
     <div class="usuario-card">
       <div class="usuario-card-info">
         <div class="usuario-avatar">${(u.nome||u.usuario).charAt(0).toUpperCase()}</div>
         <div>
           <div class="usuario-card-nome">${u.nome || u.usuario}</div>
-          <div class="usuario-card-sub">@${u.usuario} ${i===0?'· Admin':''}</div>
+          <div class="usuario-card-sub">@${u.usuario} · ${perfilLabel[u.perfil||'admin']||'Admin'}</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
@@ -2449,6 +2598,7 @@ function cadastrarUsuario() {
   const email = document.getElementById('cfgEmail').value.trim();
   const senha = document.getElementById('cfgSenha').value;
   const senhaConf = document.getElementById('cfgSenhaConf').value;
+  const perfil = document.getElementById('cfgPerfil').value;
 
   if (!nome || !usuario || !email || !senha) { showToast('⚠ Preencha todos os campos', 'error'); return; }
   if (senha.length < 4) { showToast('⚠ Senha deve ter no mínimo 4 caracteres', 'error'); return; }
@@ -2457,7 +2607,7 @@ function cadastrarUsuario() {
   const usuarios = getUsuarios();
   if (usuarios.find(u => u.usuario === usuario)) { showToast('⚠ Este usuário já existe', 'error'); return; }
 
-  usuarios.push({nome, usuario, email, senha});
+  usuarios.push({nome, usuario, email, senha, perfil});
   salvarUsuarios(usuarios);
   limparFormUsuario();
   renderConfiguracoes();
@@ -2470,6 +2620,7 @@ function limparFormUsuario() {
   document.getElementById('cfgEmail').value = '';
   document.getElementById('cfgSenha').value = '';
   document.getElementById('cfgSenhaConf').value = '';
+  document.getElementById('cfgPerfil').value = 'admin';
 }
 
 function removerUsuarioConfig(idx) {
@@ -2526,6 +2677,7 @@ function verificarLogin() {
       const u = usuarios.find(x => x.usuario === usuario || (x.nome && x.nome.toLowerCase() === usuario.toLowerCase()));
       const nomeExibir = u ? (u.nome || u.usuario) : usuario;
       document.getElementById('usuarioLogadoNome').textContent = nomeExibir;
+      aplicarPermissoes(usuario);
     }
   }
 }
@@ -2540,9 +2692,9 @@ function fazerLogin() {
     sessionStorage.setItem('drprime_usuario', usuario);
     document.getElementById('loginOverlay').classList.add('hide');
     document.getElementById('loginErro').classList.remove('show');
-    // Mostrar nome completo no header
     const nomeExibir = encontrado.nome || usuario;
     document.getElementById('usuarioLogadoNome').textContent = nomeExibir;
+    aplicarPermissoes(usuario);
     showToast('✓ Bem-vindo, ' + nomeExibir + '!', 'success');
   } else {
     document.getElementById('loginErro').classList.add('show');
