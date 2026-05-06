@@ -391,6 +391,20 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
   }
 
   .badge-suspended { background:rgba(107,127,168,0.15); color:var(--muted); }
+
+  /* PERMISSÕES */
+  .perm-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .perm-card-header { padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+  .perm-card-icon { font-size:1.2rem; }
+  .perm-card-title { font-weight:800; font-size:0.9rem; }
+  .perm-card-desc { font-size:0.75rem; color:var(--muted); }
+  .perm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; padding:14px; }
+  .perm-item { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:all 0.15s; }
+  .perm-item:hover { border-color:var(--accent2); }
+  .perm-item.ativo { border-color:var(--green); background:rgba(0,229,160,0.08); }
+  .perm-checkbox { width:16px; height:16px; accent-color:var(--green); cursor:pointer; }
+  .perm-label { font-size:0.8rem; font-weight:600; }
+
 </style>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -695,6 +709,9 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
       <div class="config-menu-item active" onclick="abrirConfigSecao('usuarios', this)">
         <span class="config-menu-icon">👤</span> Usuários e Senhas
       </div>
+      <div class="config-menu-item" onclick="abrirConfigSecao('permissoes', this)">
+        <span class="config-menu-icon">🔐</span> Permissões
+      </div>
       <div class="config-menu-item" onclick="abrirConfigSecao('exportar', this)">
         <span class="config-menu-icon">📊</span> Exportar Dados
       </div>
@@ -745,6 +762,20 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(255,255,255,0.
           </div>
         </div>
 
+      </div>
+
+      <!-- Seção Permissões -->
+      <div class="config-section" id="config-permissoes">
+        <div class="config-card">
+          <div class="config-card-title">🔐 Controle de Permissões</div>
+          <div class="config-card-desc">Defina o que cada perfil pode ver e fazer no sistema.</div>
+
+          <div id="permissoesContainer" style="display:flex;flex-direction:column;gap:16px;"></div>
+
+          <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+            <button class="btn btn-primary btn-sm" onclick="salvarPermissoes()">💾 Salvar Permissões</button>
+          </div>
+        </div>
       </div>
 
       <!-- Seção Exportar -->
@@ -1750,6 +1781,20 @@ function imprimirRecibo() {
   }
 
   .badge-suspended { background:rgba(107,127,168,0.15); color:var(--muted); }
+
+  /* PERMISSÕES */
+  .perm-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .perm-card-header { padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+  .perm-card-icon { font-size:1.2rem; }
+  .perm-card-title { font-weight:800; font-size:0.9rem; }
+  .perm-card-desc { font-size:0.75rem; color:var(--muted); }
+  .perm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; padding:14px; }
+  .perm-item { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; cursor:pointer; transition:all 0.15s; }
+  .perm-item:hover { border-color:var(--accent2); }
+  .perm-item.ativo { border-color:var(--green); background:rgba(0,229,160,0.08); }
+  .perm-checkbox { width:16px; height:16px; accent-color:var(--green); cursor:pointer; }
+  .perm-label { font-size:0.8rem; font-weight:600; }
+
 </style>
 </head><body>${conteudo}</body></html>`);
   janela.document.close(); janela.focus();
@@ -1963,6 +2008,14 @@ window.addEventListener('fbReady', () => {
   if (window._historicoFirebase && window._historicoFirebase.length > 0) {
     historico = window._historicoFirebase;
     localStorage.setItem('aquagest_historico', JSON.stringify(historico));
+  }
+  // Carregar permissões do Firebase
+  if (window._permissoesFirebase) {
+    permissoes = window._permissoesFirebase;
+    localStorage.setItem('drprime_permissoes', JSON.stringify(permissoes));
+    ABAS_PERFIL.gerente = permissoes.gerente?.abas || ABAS_PERFIL.gerente;
+    ABAS_PERFIL.tecnico = permissoes.tecnico?.abas || ABAS_PERFIL.tecnico;
+    ABAS_PERFIL.financeiro = permissoes.financeiro?.abas || ABAS_PERFIL.financeiro;
   }
   renderDashboard();
   showToast('✓ Conectado ao Firebase!', 'success');
@@ -2395,6 +2448,130 @@ function filtrarClientesPorTecnico(lista) {
   return lista.filter(c => c.tecnico === tecnicoAtual.usuario);
 }
 
+
+// ── CONTROLE DE PERMISSÕES ──
+const TODAS_PERMISSOES = {
+  abas: [
+    { id:'dashboard',    label:'📊 Dashboard' },
+    { id:'clientes',     label:'👥 Clientes' },
+    { id:'historico',    label:'📁 Histórico' },
+    { id:'estoque',      label:'📦 Estoque' },
+    { id:'servicos',     label:'🔧 Serviços' },
+    { id:'visaogeral',   label:'📈 Visão Geral' },
+  ],
+  funcoes: [
+    { id:'marcar_pago',      label:'✅ Marcar Pago' },
+    { id:'enviar_cobranca',  label:'💬 Enviar Cobrança' },
+    { id:'editar_cliente',   label:'✏️ Editar Cliente' },
+    { id:'excluir_cliente',  label:'🗑️ Excluir Cliente' },
+    { id:'necessidade_prod', label:'🧴 Necessidade Produtos' },
+    { id:'ver_historico',    label:'📁 Ver Histórico' },
+    { id:'movimentar_estoque', label:'📦 Movimentar Estoque' },
+    { id:'gerar_orcamento',  label:'📋 Gerar Orçamento' },
+    { id:'exportar_dados',   label:'⬇️ Exportar Dados' },
+  ]
+};
+
+const PERFIS_CONFIG = [
+  { id:'gerente',   label:'👔 Gerente',   cor:'var(--accent2)' },
+  { id:'tecnico',   label:'🔧 Técnico',   cor:'var(--green)' },
+  { id:'financeiro',label:'📊 Financeiro',cor:'var(--yellow)' },
+];
+
+// Permissões padrão
+let permissoes = JSON.parse(localStorage.getItem('drprime_permissoes') || 'null') || {
+  gerente: {
+    abas: ['dashboard','clientes','historico','estoque','servicos','visaogeral'],
+    funcoes: ['marcar_pago','enviar_cobranca','editar_cliente','necessidade_prod','ver_historico','movimentar_estoque','gerar_orcamento','exportar_dados']
+  },
+  tecnico: {
+    abas: ['clientes','estoque'],
+    funcoes: ['necessidade_prod','movimentar_estoque']
+  },
+  financeiro: {
+    abas: ['dashboard','historico','visaogeral'],
+    funcoes: ['marcar_pago','enviar_cobranca','exportar_dados']
+  }
+};
+
+function salvarPermissoesLocal() {
+  localStorage.setItem('drprime_permissoes', JSON.stringify(permissoes));
+  if (window._db && window._fbModules) {
+    const { setDoc, doc } = window._fbModules;
+    setDoc(doc(window._db, 'config', 'permissoes'), permissoes).catch(e => console.warn('FB perm:', e));
+  }
+}
+
+function renderPermissoes() {
+  const container = document.getElementById('permissoesContainer');
+  if (!container) return;
+
+  container.innerHTML = PERFIS_CONFIG.map(perfil => {
+    const perms = permissoes[perfil.id] || { abas:[], funcoes:[] };
+
+    const abasHTML = TODAS_PERMISSOES.abas.map(aba => {
+      const ativo = perms.abas.includes(aba.id);
+      return `<div class="perm-item ${ativo?'ativo':''}" onclick="togglePermissao('${perfil.id}','abas','${aba.id}',this)">
+        <input type="checkbox" class="perm-checkbox" ${ativo?'checked':''} onclick="event.stopPropagation()">
+        <span class="perm-label">${aba.label}</span>
+      </div>`;
+    }).join('');
+
+    const funcoesHTML = TODAS_PERMISSOES.funcoes.map(fn => {
+      const ativo = perms.funcoes.includes(fn.id);
+      return `<div class="perm-item ${ativo?'ativo':''}" onclick="togglePermissao('${perfil.id}','funcoes','${fn.id}',this)">
+        <input type="checkbox" class="perm-checkbox" ${ativo?'checked':''} onclick="event.stopPropagation()">
+        <span class="perm-label">${fn.label}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="perm-card">
+      <div class="perm-card-header">
+        <span class="perm-card-icon">${perfil.label.split(' ')[0]}</span>
+        <div>
+          <div class="perm-card-title" style="color:${perfil.cor}">${perfil.label}</div>
+          <div class="perm-card-desc">Defina abas e funções permitidas</div>
+        </div>
+      </div>
+      <div style="padding:10px 14px 4px;font-size:0.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);">Abas visíveis</div>
+      <div class="perm-grid">${abasHTML}</div>
+      <div style="padding:4px 14px;font-size:0.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);">Funções permitidas</div>
+      <div class="perm-grid">${funcoesHTML}</div>
+    </div>`;
+  }).join('');
+}
+
+function togglePermissao(perfilId, tipo, itemId, el) {
+  if (!permissoes[perfilId]) permissoes[perfilId] = { abas:[], funcoes:[] };
+  const lista = permissoes[perfilId][tipo];
+  const idx = lista.indexOf(itemId);
+  const checkbox = el.querySelector('.perm-checkbox');
+
+  if (idx >= 0) {
+    lista.splice(idx, 1);
+    el.classList.remove('ativo');
+    if (checkbox) checkbox.checked = false;
+  } else {
+    lista.push(itemId);
+    el.classList.add('ativo');
+    if (checkbox) checkbox.checked = true;
+  }
+}
+
+function salvarPermissoes() {
+  salvarPermissoesLocal();
+  // Atualizar ABAS_PERFIL em tempo real
+  ABAS_PERFIL.gerente = permissoes.gerente?.abas || [];
+  ABAS_PERFIL.tecnico = permissoes.tecnico?.abas || [];
+  ABAS_PERFIL.financeiro = permissoes.financeiro?.abas || [];
+  showToast('✓ Permissões salvas com sucesso!', 'success');
+}
+
+function temPermissao(funcaoId) {
+  if (perfilAtual === 'admin') return true;
+  return permissoes[perfilAtual]?.funcoes?.includes(funcaoId) || false;
+}
+
 // ── EXPORTAR PDF ──
 function exportarPDF(tipo) {
   if (typeof window.jspdf === 'undefined') {
@@ -2554,6 +2731,7 @@ function abrirConfigSecao(secao, el) {
 }
 
 function renderConfiguracoes() {
+  renderPermissoes();
   // Popular select de clientes no filtro de exportação
   const expCliente = document.getElementById('expCliente');
   if (expCliente) {
@@ -2810,6 +2988,16 @@ renderDashboard();
     if (!snapP.empty) window._produtosFirebase = snapP.docs.map(d => d.data());
     if (!snapH.empty) window._historicoFirebase = snapH.docs.map(d => d.data());
     if (!snapU.empty) window._usuariosFirebase = snapU.docs.map(d => d.data());
+    // Carregar permissões
+    try {
+      const { getDoc } = await import('https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js');
+      const snapPerm = await getDocs(collection(db, 'config'));
+      if (!snapPerm.empty) {
+        snapPerm.docs.forEach(d => {
+          if (d.id === 'permissoes') window._permissoesFirebase = d.data();
+        });
+      }
+    } catch(ep) { console.warn('Permissões FB:', ep); }
   } catch(e) { console.warn('Firebase load:', e); }
 
   // Listeners em tempo real
